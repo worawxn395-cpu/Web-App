@@ -1,11 +1,28 @@
-<!DOCTYPE html>
-<html>
-<body>
-<h1>GitHub Pages ทำงานแล้ว</h1>
-
 <script>
-console.log("JS ทำงานแล้ว");
-</script>
+const API = "https://script.google.com/macros/s/AKfycbx6ay2TUNNRD39MZuqxk3Qq9qQfnXR87PaE-uyMjAkpZHToiGDEPiTePppvOofSc4SVbA/exec";
 
-</body>
-</html>
+/* ======= SAVE ======= */
+async function saveResponse(data){
+await fetch(API,{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+type:"response",
+payload:data
+})
+});
+}
+
+/* ======= DASHBOARD ======= */
+async function loadDashboard(){
+const res = await fetch(API+"?action=dashboard");
+const data = await res.json();
+console.log(data);
+}
+
+/* ======= CONFIG ======= */
+async function loadConfig(){
+const res = await fetch(API+"?action=config");
+return await res.json();
+}
+</script>
