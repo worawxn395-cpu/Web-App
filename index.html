@@ -3,178 +3,467 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แบบประเมินความพึงพอใจ</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<style>
-body{
-font-family:'Noto Sans Thai',sans-serif;
-margin:0;
-background:linear-gradient(135deg,#dff3ff,#bde8ff);
-}
-.container{
-max-width:1000px;
-margin:auto;
-padding:20px;
-background:white;
-border-radius:20px;
-margin-top:20px;
-box-shadow:0 10px 30px rgba(0,0,0,0.1);
-}
-button{
-background:#00b4d8;color:white;
-padding:10px 20px;
-border:none;border-radius:12px;
-cursor:pointer;margin:5px;
-}
-input,select,textarea{
-width:100%;padding:10px;margin:5px 0 15px;
-border-radius:10px;border:1px solid #ccc;
-}
-.rating span{
-font-size:24px;
-cursor:pointer;
-opacity:0.3;
-transition:0.2s;
-margin:4px;
-}
-.hidden{display:none;}
-</style>
+<title>ระบบประเมินความพึงพอใจ</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-<div class="container">
+<body class="bg-gray-100 p-4">
 
-<h2>แบบประเมินความพึงพอใจ</h2>
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow">
 
-<input id="name" placeholder="ชื่อ">
-<input id="number" placeholder="เลขที่">
-<select id="gender">
-<option value="">เลือกเพศ</option>
-<option>ชาย</option>
-<option>หญิง</option>
-</select>
-<input id="classroom" placeholder="ห้องเรียน">
+<h1 class="text-2xl font-bold mb-4 text-center">ระบบประเมินความพึงพอใจ</h1>
 
-<div id="questions"></div>
+<div class="flex gap-2 mb-6 justify-center">
+  <button onclick="showPage('form')" class="bg-blue-500 text-white px-4 py-2 rounded">แบบประเมิน</button>
+  <button onclick="showPage('dashboard')" class="bg-green-500 text-white px-4 py-2 rounded">Dashboard</button>
+  <button onclick="showPage('edit')" class="bg-purple-500 text-white px-4 py-2 rounded">แก้ไขคำถาม</button>
+</div>
 
-<textarea id="suggestion" placeholder="ข้อเสนอแนะเพิ่มเติม"></textarea>
+<!-- FORM -->
+<div id="formPage">
+  <input id="name" placeholder="ชื่อ" class="border p-2 w-full mb-2">
+  <input id="number" placeholder="เลขที่" class="border p-2 w-full mb-2">
+  <select id="gender" class="border p-2 w-full mb-2">
+    <option>ชาย</option>
+    <option>หญิง</option>
+  </select>
+  <input id="classroom" placeholder="ห้องเรียน" class="border p-2 w-full mb-4">
 
-<button onclick="submitForm()">ส่งแบบประเมิน</button>
+  <div id="questions"></div>
 
-<hr>
-<h2>Dashboard</h2>
-<p>จำนวนผู้ตอบ: <b id="total"></b></p>
-<canvas id="genderChart"></canvas>
-<canvas id="classChart"></canvas>
-<canvas id="avgChart"></canvas>
+  <textarea id="suggestion" placeholder="ข้อเสนอแนะ" class="border p-2 w-full mt-4"></textarea>
+
+  <button onclick="submitForm()" class="bg-blue-600 text-white px-4 py-2 rounded mt-4 w-full">
+    ส่งคำตอบ
+  </button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboardPage" class="hidden">
+  <h2 class="text-xl font-bold mb-4">สรุปผล</h2>
+  <div id="dashboardData"></div>
+</div>
+
+<!-- EDIT -->
+<div id="editPage" class="hidden">
+  <h2 class="text-xl font-bold mb-4">แก้ไขคำถาม</h2>
+  <div id="editQuestions"></div>
+  <button onclick="saveConfig()" class="bg-purple-600 text-white px-4 py-2 rounded mt-4">
+    บันทึก
+  </button>
+</div>
 
 </div>
 
 <script>
+const API = "YOUR_WEB_APP_URL";
 
-const API = "https://script.google.com/macros/s/AKfycbyuEFeMaUSxWBNYudBHe2XEuTdfLFrHoTo5ckWV_0r__kNoc-SfQ17HXkEk1RiNqGeQEA/exec";
+function showPage(page){
+  document.getElementById("formPage").classList.add("hidden");
+  document.getElementById("dashboardPage").classList.add("hidden");
+  document.getElementById("editPage").classList.add("hidden");
 
-let config = {};
-let answers = [];
-
-async function loadConfig(){
-const res = await fetch(API+"?action=config");
-config = await res.json();
-renderQuestions();
+  if(page==="form") document.getElementById("formPage").classList.remove("hidden");
+  if(page==="dashboard"){ loadDashboard(); document.getElementById("dashboardPage").classList.remove("hidden"); }
+  if(page==="edit"){ loadConfig(true); document.getElementById("editPage").classList.remove("hidden"); }
 }
 
-function renderQuestions(){
-let html="";
-config.questions.forEach((q,i)=>{
-answers[i]=0;
-html+=`<p>${i+1}. ${q}</p><div class="rating">`;
-for(let j=1;j<=5;j++){
-html+=`<span onclick="setRate(${i},${j},this)">${config.emojis[j-1]}</span>`;
-}
-html+="</div>";
-});
-document.getElementById("questions").innerHTML=html;
-}
+async function loadConfig(edit=false){
+  const res = await fetch(API+"?action=config");
+  const data = await res.json();
 
-function setRate(q,v,el){
-answers[q]=v;
-let spans=el.parentElement.querySelectorAll("span");
-spans.forEach((s,i)=>{
-s.style.opacity=(i<v)?1:0.3;
-});
+  if(!edit){
+    const qDiv=document.getElementById("questions");
+    qDiv.innerHTML="";
+    data.questions.forEach((q,i)=>{
+      qDiv.innerHTML+=`
+        <p class="mt-3">${q}</p>
+        <select id="q${i}" class="border p-2 w-full">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      `;
+    });
+  }else{
+    const editDiv=document.getElementById("editQuestions");
+    editDiv.innerHTML="";
+    data.questions.forEach((q,i)=>{
+      editDiv.innerHTML+=`
+        <input id="editQ${i}" value="${q}" class="border p-2 w-full mb-2">
+      `;
+    });
+  }
 }
 
 async function submitForm(){
-if(!name.value||!number.value||!gender.value||!classroom.value){
-Swal.fire("กรอกข้อมูลให้ครบ");
-return;
-}
-if(answers.includes(0)){
-Swal.fire("ตอบคำถามให้ครบทุกข้อ");
-return;
-}
+  const answers=[];
+  for(let i=0;i<5;i++){
+    answers.push(document.getElementById("q"+i).value);
+  }
 
-await fetch(API,{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-type:"response",
-payload:{
-name:name.value,
-number:number.value,
-gender:gender.value,
-classroom:classroom.value,
-answers:answers,
-suggestion:suggestion.value
-}
-})
-});
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      type:"response",
+      payload:{
+        name: name.value,
+        number: number.value,
+        gender: gender.value,
+        classroom: classroom.value,
+        answers: answers,
+        suggestion: suggestion.value
+      }
+    })
+  });
 
-Swal.fire("บันทึกสำเร็จ");
-loadDashboard();
+  alert("ส่งเรียบร้อยแล้ว");
 }
-
-let genderChart,classChart,avgChart;
 
 async function loadDashboard(){
-const res=await fetch(API+"?action=dashboard");
-const d=await res.json();
+  const res=await fetch(API+"?action=dashboard");
+  const data=await res.json();
 
-document.getElementById("total").innerText=d.total;
-
-if(genderChart) genderChart.destroy();
-genderChart=new Chart(document.getElementById("genderChart"),{
-type:'pie',
-data:{labels:Object.keys(d.gender),datasets:[{data:Object.values(d.gender)}]}
-});
-
-if(classChart) classChart.destroy();
-classChart=new Chart(document.getElementById("classChart"),{
-type:'bar',
-data:{labels:Object.keys(d.classroom),datasets:[{data:Object.values(d.classroom)}]}
-});
-
-if(avgChart) avgChart.destroy();
-avgChart=new Chart(document.getElementById("avgChart"),{
-type:'bar',
-data:{
-labels:["Q1","Q2","Q3","Q4","Q5"],
-datasets:[{
-data:d.avg,
-backgroundColor:["#00b4d8","#0096c7","#0077b6","#48cae4","#90e0ef"]
-}]
+  document.getElementById("dashboardData").innerHTML=`
+    <p>จำนวนทั้งหมด: ${data.total}</p>
+    <p>ชาย: ${data.gender?.ชาย||0}</p>
+    <p>หญิง: ${data.gender?.หญิง||0}</p>
+    <p>ค่าเฉลี่ยแต่ละข้อ: ${data.avg?.join(", ")||"-"}</p>
+  `;
 }
-});
+
+async function saveConfig(){
+  const questions=[];
+  for(let i=0;i<5;i++){
+    questions.push(document.getElementById("editQ"+i).value);
+  }
+
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      type:"config",
+      payload:{questions:questions,emojis:["😡","😕","😐","😊","😍"]}
+    })
+  });
+
+  alert("บันทึกแล้ว");
 }
 
 loadConfig();
-loadDashboard();
-setInterval(loadDashboard,60000);
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบประเมินความพึงพอใจ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
 
+<body class="bg-gray-100 p-4">
+
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow">
+
+<h1 class="text-2xl font-bold mb-4 text-center">ระบบประเมินความพึงพอใจ</h1>
+
+<div class="flex gap-2 mb-6 justify-center">
+  <button onclick="showPage('form')" class="bg-blue-500 text-white px-4 py-2 rounded">แบบประเมิน</button>
+  <button onclick="showPage('dashboard')" class="bg-green-500 text-white px-4 py-2 rounded">Dashboard</button>
+  <button onclick="showPage('edit')" class="bg-purple-500 text-white px-4 py-2 rounded">แก้ไขคำถาม</button>
+</div>
+
+<!-- FORM -->
+<div id="formPage">
+  <input id="name" placeholder="ชื่อ" class="border p-2 w-full mb-2">
+  <input id="number" placeholder="เลขที่" class="border p-2 w-full mb-2">
+  <select id="gender" class="border p-2 w-full mb-2">
+    <option>ชาย</option>
+    <option>หญิง</option>
+  </select>
+  <input id="classroom" placeholder="ห้องเรียน" class="border p-2 w-full mb-4">
+
+  <div id="questions"></div>
+
+  <textarea id="suggestion" placeholder="ข้อเสนอแนะ" class="border p-2 w-full mt-4"></textarea>
+
+  <button onclick="submitForm()" class="bg-blue-600 text-white px-4 py-2 rounded mt-4 w-full">
+    ส่งคำตอบ
+  </button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboardPage" class="hidden">
+  <h2 class="text-xl font-bold mb-4">สรุปผล</h2>
+  <div id="dashboardData"></div>
+</div>
+
+<!-- EDIT -->
+<div id="editPage" class="hidden">
+  <h2 class="text-xl font-bold mb-4">แก้ไขคำถาม</h2>
+  <div id="editQuestions"></div>
+  <button onclick="saveConfig()" class="bg-purple-600 text-white px-4 py-2 rounded mt-4">
+    บันทึก
+  </button>
+</div>
+
+</div>
+
+<script>
+const API = "YOUR_WEB_APP_URL";
+
+function showPage(page){
+  document.getElementById("formPage").classList.add("hidden");
+  document.getElementById("dashboardPage").classList.add("hidden");
+  document.getElementById("editPage").classList.add("hidden");
+
+  if(page==="form") document.getElementById("formPage").classList.remove("hidden");
+  if(page==="dashboard"){ loadDashboard(); document.getElementById("dashboardPage").classList.remove("hidden"); }
+  if(page==="edit"){ loadConfig(true); document.getElementById("editPage").classList.remove("hidden"); }
+}
+
+async function loadConfig(edit=false){
+  const res = await fetch(API+"?action=config");
+  const data = await res.json();
+
+  if(!edit){
+    const qDiv=document.getElementById("questions");
+    qDiv.innerHTML="";
+    data.questions.forEach((q,i)=>{
+      qDiv.innerHTML+=`
+        <p class="mt-3">${q}</p>
+        <select id="q${i}" class="border p-2 w-full">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      `;
+    });
+  }else{
+    const editDiv=document.getElementById("editQuestions");
+    editDiv.innerHTML="";
+    data.questions.forEach((q,i)=>{
+      editDiv.innerHTML+=`
+        <input id="editQ${i}" value="${q}" class="border p-2 w-full mb-2">
+      `;
+    });
+  }
+}
+
+async function submitForm(){
+  const answers=[];
+  for(let i=0;i<5;i++){
+    answers.push(document.getElementById("q"+i).value);
+  }
+
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      type:"response",
+      payload:{
+        name: name.value,
+        number: number.value,
+        gender: gender.value,
+        classroom: classroom.value,
+        answers: answers,
+        suggestion: suggestion.value
+      }
+    })
+  });
+
+  alert("ส่งเรียบร้อยแล้ว");
+}
+
+async function loadDashboard(){
+  const res=await fetch(API+"?action=dashboard");
+  const data=await res.json();
+
+  document.getElementById("dashboardData").innerHTML=`
+    <p>จำนวนทั้งหมด: ${data.total}</p>
+    <p>ชาย: ${data.gender?.ชาย||0}</p>
+    <p>หญิง: ${data.gender?.หญิง||0}</p>
+    <p>ค่าเฉลี่ยแต่ละข้อ: ${data.avg?.join(", ")||"-"}</p>
+  `;
+}
+
+async function saveConfig(){
+  const questions=[];
+  for(let i=0;i<5;i++){
+    questions.push(document.getElementById("editQ"+i).value);
+  }
+
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      type:"config",
+      payload:{questions:questions,emojis:["😡","😕","😐","😊","😍"]}
+    })
+  });
+
+  alert("บันทึกแล้ว");
+}
+
+loadConfig();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบประเมินความพึงพอใจ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-4">
+
+<div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow">
+
+<h1 class="text-2xl font-bold mb-4 text-center">ระบบประเมินความพึงพอใจ</h1>
+
+<div class="flex gap-2 mb-6 justify-center">
+  <button onclick="showPage('form')" class="bg-blue-500 text-white px-4 py-2 rounded">แบบประเมิน</button>
+  <button onclick="showPage('dashboard')" class="bg-green-500 text-white px-4 py-2 rounded">Dashboard</button>
+  <button onclick="showPage('edit')" class="bg-purple-500 text-white px-4 py-2 rounded">แก้ไขคำถาม</button>
+</div>
+
+<!-- FORM -->
+<div id="formPage">
+  <input id="name" placeholder="ชื่อ" class="border p-2 w-full mb-2">
+  <input id="number" placeholder="เลขที่" class="border p-2 w-full mb-2">
+  <select id="gender" class="border p-2 w-full mb-2">
+    <option>ชาย</option>
+    <option>หญิง</option>
+  </select>
+  <input id="classroom" placeholder="ห้องเรียน" class="border p-2 w-full mb-4">
+
+  <div id="questions"></div>
+
+  <textarea id="suggestion" placeholder="ข้อเสนอแนะ" class="border p-2 w-full mt-4"></textarea>
+
+  <button onclick="submitForm()" class="bg-blue-600 text-white px-4 py-2 rounded mt-4 w-full">
+    ส่งคำตอบ
+  </button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboardPage" class="hidden">
+  <h2 class="text-xl font-bold mb-4">สรุปผล</h2>
+  <div id="dashboardData"></div>
+</div>
+
+<!-- EDIT -->
+<div id="editPage" class="hidden">
+  <h2 class="text-xl font-bold mb-4">แก้ไขคำถาม</h2>
+  <div id="editQuestions"></div>
+  <button onclick="saveConfig()" class="bg-purple-600 text-white px-4 py-2 rounded mt-4">
+    บันทึก
+  </button>
+</div>
+
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbwurpGtPXtNgFbwlBMQrBHlV_0RMQQCpLhJxcT8kMxnvyY6lsfFbvgweqQVCgPYydSD1Q/exec";
+
+function showPage(page){
+  document.getElementById("formPage").classList.add("hidden");
+  document.getElementById("dashboardPage").classList.add("hidden");
+  document.getElementById("editPage").classList.add("hidden");
+
+  if(page==="form") document.getElementById("formPage").classList.remove("hidden");
+  if(page==="dashboard"){ loadDashboard(); document.getElementById("dashboardPage").classList.remove("hidden"); }
+  if(page==="edit"){ loadConfig(true); document.getElementById("editPage").classList.remove("hidden"); }
+}
+
+async function loadConfig(edit=false){
+  const res = await fetch(API+"?action=config");
+  const data = await res.json();
+
+  if(!edit){
+    const qDiv=document.getElementById("questions");
+    qDiv.innerHTML="";
+    data.questions.forEach((q,i)=>{
+      qDiv.innerHTML+=`
+        <p class="mt-3">${q}</p>
+        <select id="q${i}" class="border p-2 w-full">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      `;
+    });
+  }else{
+    const editDiv=document.getElementById("editQuestions");
+    editDiv.innerHTML="";
+    data.questions.forEach((q,i)=>{
+      editDiv.innerHTML+=`
+        <input id="editQ${i}" value="${q}" class="border p-2 w-full mb-2">
+      `;
+    });
+  }
+}
+
+async function submitForm(){
+  const answers=[];
+  for(let i=0;i<5;i++){
+    answers.push(document.getElementById("q"+i).value);
+  }
+
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      type:"response",
+      payload:{
+        name: name.value,
+        number: number.value,
+        gender: gender.value,
+        classroom: classroom.value,
+        answers: answers,
+        suggestion: suggestion.value
+      }
+    })
+  });
+
+  alert("ส่งเรียบร้อยแล้ว");
+}
+
+async function loadDashboard(){
+  const res=await fetch(API+"?action=dashboard");
+  const data=await res.json();
+
+  document.getElementById("dashboardData").innerHTML=`
+    <p>จำนวนทั้งหมด: ${data.total}</p>
+    <p>ชาย: ${data.gender?.ชาย||0}</p>
+    <p>หญิง: ${data.gender?.หญิง||0}</p>
+    <p>ค่าเฉลี่ยแต่ละข้อ: ${data.avg?.join(", ")||"-"}</p>
+  `;
+}
+
+async function saveConfig(){
+  const questions=[];
+  for(let i=0;i<5;i++){
+    questions.push(document.getElementById("editQ"+i).value);
+  }
+
+  await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      type:"config",
+      payload:{questions:questions,emojis:["😡","😕","😐","😊","😍"]}
+    })
+  });
+
+  alert("บันทึกแล้ว");
+}
+
+loadConfig();
 </script>
 </body>
 </html>
