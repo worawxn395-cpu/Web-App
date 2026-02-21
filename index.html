@@ -1,28 +1,180 @@
-<script>
-const API = "https://script.google.com/macros/s/AKfycbx6ay2TUNNRD39MZuqxk3Qq9qQfnXR87PaE-uyMjAkpZHToiGDEPiTePppvOofSc4SVbA/exec";
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แบบประเมินความพึงพอใจ</title>
 
-/* ======= SAVE ======= */
-async function saveResponse(data){
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+body{
+font-family:'Noto Sans Thai',sans-serif;
+margin:0;
+background:linear-gradient(135deg,#dff3ff,#bde8ff);
+}
+.container{
+max-width:1000px;
+margin:auto;
+padding:20px;
+background:white;
+border-radius:20px;
+margin-top:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+button{
+background:#00b4d8;color:white;
+padding:10px 20px;
+border:none;border-radius:12px;
+cursor:pointer;margin:5px;
+}
+input,select,textarea{
+width:100%;padding:10px;margin:5px 0 15px;
+border-radius:10px;border:1px solid #ccc;
+}
+.rating span{
+font-size:24px;
+cursor:pointer;
+opacity:0.3;
+transition:0.2s;
+margin:4px;
+}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>แบบประเมินความพึงพอใจ</h2>
+
+<input id="name" placeholder="ชื่อ">
+<input id="number" placeholder="เลขที่">
+<select id="gender">
+<option value="">เลือกเพศ</option>
+<option>ชาย</option>
+<option>หญิง</option>
+</select>
+<input id="classroom" placeholder="ห้องเรียน">
+
+<div id="questions"></div>
+
+<textarea id="suggestion" placeholder="ข้อเสนอแนะเพิ่มเติม"></textarea>
+
+<button onclick="submitForm()">ส่งแบบประเมิน</button>
+
+<hr>
+<h2>Dashboard</h2>
+<p>จำนวนผู้ตอบ: <b id="total"></b></p>
+<canvas id="genderChart"></canvas>
+<canvas id="classChart"></canvas>
+<canvas id="avgChart"></canvas>
+
+</div>
+
+<script>
+
+const API = "https://script.google.com/macros/s/AKfycbyuEFeMaUSxWBNYudBHe2XEuTdfLFrHoTo5ckWV_0r__kNoc-SfQ17HXkEk1RiNqGeQEA/exec";
+
+let config = {};
+let answers = [];
+
+async function loadConfig(){
+const res = await fetch(API+"?action=config");
+config = await res.json();
+renderQuestions();
+}
+
+function renderQuestions(){
+let html="";
+config.questions.forEach((q,i)=>{
+answers[i]=0;
+html+=`<p>${i+1}. ${q}</p><div class="rating">`;
+for(let j=1;j<=5;j++){
+html+=`<span onclick="setRate(${i},${j},this)">${config.emojis[j-1]}</span>`;
+}
+html+="</div>";
+});
+document.getElementById("questions").innerHTML=html;
+}
+
+function setRate(q,v,el){
+answers[q]=v;
+let spans=el.parentElement.querySelectorAll("span");
+spans.forEach((s,i)=>{
+s.style.opacity=(i<v)?1:0.3;
+});
+}
+
+async function submitForm(){
+if(!name.value||!number.value||!gender.value||!classroom.value){
+Swal.fire("กรอกข้อมูลให้ครบ");
+return;
+}
+if(answers.includes(0)){
+Swal.fire("ตอบคำถามให้ครบทุกข้อ");
+return;
+}
+
 await fetch(API,{
 method:"POST",
 headers:{'Content-Type':'application/json'},
 body:JSON.stringify({
 type:"response",
-payload:data
+payload:{
+name:name.value,
+number:number.value,
+gender:gender.value,
+classroom:classroom.value,
+answers:answers,
+suggestion:suggestion.value
+}
 })
+});
+
+Swal.fire("บันทึกสำเร็จ");
+loadDashboard();
+}
+
+let genderChart,classChart,avgChart;
+
+async function loadDashboard(){
+const res=await fetch(API+"?action=dashboard");
+const d=await res.json();
+
+document.getElementById("total").innerText=d.total;
+
+if(genderChart) genderChart.destroy();
+genderChart=new Chart(document.getElementById("genderChart"),{
+type:'pie',
+data:{labels:Object.keys(d.gender),datasets:[{data:Object.values(d.gender)}]}
+});
+
+if(classChart) classChart.destroy();
+classChart=new Chart(document.getElementById("classChart"),{
+type:'bar',
+data:{labels:Object.keys(d.classroom),datasets:[{data:Object.values(d.classroom)}]}
+});
+
+if(avgChart) avgChart.destroy();
+avgChart=new Chart(document.getElementById("avgChart"),{
+type:'bar',
+data:{
+labels:["Q1","Q2","Q3","Q4","Q5"],
+datasets:[{
+data:d.avg,
+backgroundColor:["#00b4d8","#0096c7","#0077b6","#48cae4","#90e0ef"]
+}]
+}
 });
 }
 
-/* ======= DASHBOARD ======= */
-async function loadDashboard(){
-const res = await fetch(API+"?action=dashboard");
-const data = await res.json();
-console.log(data);
-}
+loadConfig();
+loadDashboard();
+setInterval(loadDashboard,60000);
 
-/* ======= CONFIG ======= */
-async function loadConfig(){
-const res = await fetch(API+"?action=config");
-return await res.json();
-}
 </script>
+</body>
+</html>
