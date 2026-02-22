@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แบบประเมินความพึงพอใจ</title>
+<title>ระบบประเมินความพึงพอใจ</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -12,74 +12,90 @@
 
 <style>
 body { font-family: 'Noto Sans Thai', sans-serif; }
-.active-emoji { transform: scale(1.2); border:2px solid #0284c7; background:#e0f2fe; }
+.active-emoji {
+  transform: scale(1.3);
+  border:2px solid #0284c7;
+  background:#e0f2fe;
+  border-radius:10px;
+}
 </style>
 </head>
 
-<body class="bg-sky-50">
+<body class="bg-gradient-to-br from-sky-50 to-blue-100 min-h-screen">
 
 <!-- NAV -->
-<div class="bg-sky-500 text-white p-4 flex justify-center gap-4">
+<div class="bg-sky-600 text-white p-4 flex justify-center gap-6 text-lg font-semibold shadow">
 <button onclick="showPage('form')">แบบประเมิน</button>
 <button onclick="showPage('dashboard')">Dashboard</button>
 <button onclick="showPage('edit')">แก้ไข</button>
 </div>
 
-<!-- FORM PAGE -->
+<!-- FORM -->
 <div id="formPage" class="p-6 max-w-xl mx-auto">
-<h1 class="text-2xl font-semibold mb-4 text-center">แบบประเมินความพึงพอใจ</h1>
+<h1 class="text-2xl font-bold text-center mb-4">แบบประเมินความพึงพอใจ</h1>
 
-<input id="name" class="w-full p-2 mb-2 border rounded" placeholder="ชื่อ">
-<input id="number" class="w-full p-2 mb-2 border rounded" placeholder="เลขที่">
-<select id="gender" class="w-full p-2 mb-2 border rounded">
+<input id="name" class="input" placeholder="ชื่อ">
+<input id="number" class="input" placeholder="เลขที่">
+<select id="gender" class="input">
 <option value="">เลือกเพศ</option>
 <option>ชาย</option>
 <option>หญิง</option>
 </select>
-<input id="classroom" class="w-full p-2 mb-4 border rounded" placeholder="ห้องเรียน">
+<input id="classroom" class="input" placeholder="ห้องเรียน">
 
-<div id="questions"></div>
+<div id="questions" class="mt-4"></div>
 
-<textarea id="suggestion" class="w-full p-2 mt-4 border rounded" placeholder="ข้อเสนอแนะเพิ่มเติม"></textarea>
+<textarea id="suggestion" class="input mt-4" placeholder="ข้อเสนอแนะเพิ่มเติม"></textarea>
 
-<button onclick="submitForm()" class="w-full bg-sky-500 text-white p-2 mt-4 rounded">ส่งแบบประเมิน</button>
-<button onclick="loadConfig()" class="w-full bg-gray-400 text-white p-2 mt-2 rounded">รีเฟรชคำถาม</button>
+<button onclick="submitForm()" class="btn-primary mt-4">ส่งแบบประเมิน</button>
+<button onclick="loadConfig()" class="btn-gray mt-2">รีเฟรชคำถาม</button>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboardPage" class="hidden p-6 max-w-3xl mx-auto">
-<h2 class="text-xl font-semibold mb-4">Dashboard</h2>
-<p id="total" class="mb-4"></p>
+<div id="dashboardPage" class="hidden p-6 max-w-4xl mx-auto">
+<h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+<p id="total" class="mb-4 text-lg"></p>
 <canvas id="genderChart"></canvas>
 <canvas id="classChart" class="mt-6"></canvas>
 <canvas id="avgChart" class="mt-6"></canvas>
-<button onclick="loadDashboard()" class="bg-sky-500 text-white p-2 mt-4 rounded">รีเฟรช</button>
+<button onclick="loadDashboard()" class="btn-primary mt-4">รีเฟรช</button>
 </div>
 
 <!-- EDIT -->
 <div id="editPage" class="hidden p-6 max-w-xl mx-auto">
-<h2 class="text-xl font-semibold mb-4">แก้ไขคำถาม</h2>
+<h2 class="text-2xl font-bold mb-4">แก้ไขคำถาม</h2>
+
 <div id="editQuestions"></div>
-<input id="newQuestion" class="w-full p-2 mt-2 border rounded" placeholder="เพิ่มคำถามใหม่">
-<button onclick="addQuestion()" class="bg-green-500 text-white p-2 mt-2 rounded">เพิ่ม</button>
-<button onclick="saveConfig()" class="w-full bg-sky-500 text-white p-2 mt-4 rounded">บันทึก</button>
+
+<h3 class="mt-4 font-semibold">แก้ไข Emoji</h3>
+<input id="emojiInput" class="input" placeholder="เช่น 😡 😐 😊 😍">
+
+<input id="newQuestion" class="input mt-3" placeholder="เพิ่มคำถามใหม่">
+<button onclick="addQuestion()" class="btn-green mt-2">เพิ่มคำถาม</button>
+<button onclick="saveConfig()" class="btn-primary mt-4">บันทึกทั้งหมด</button>
 </div>
+
+<style>
+.input { width:100%; padding:8px; margin-bottom:8px; border-radius:8px; border:1px solid #ccc; }
+.btn-primary { width:100%; background:#0284c7; color:white; padding:8px; border-radius:8px; }
+.btn-gray { width:100%; background:#6b7280; color:white; padding:8px; border-radius:8px; }
+.btn-green { width:100%; background:#16a34a; color:white; padding:8px; border-radius:8px; }
+</style>
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbx-r9e652DihP2ZpwJYD5gksJxqmLyn5b2BPTO-1Qds9s1PsGGBLYsiGhoNY6QAC1RSRQ/exec";
+const API = "https://script.google.com/macros/s/AKfycbyAlQOxiD_glKIXpb2bCijfX1r7xgL7yxvRh-02R8Akv3-89viGiOVuUrQ6UCUoPEmxkg/exec";
 
 let configData = {};
 let answers = [];
 
-function showPage(page){
-document.getElementById("formPage").classList.add("hidden");
-document.getElementById("dashboardPage").classList.add("hidden");
-document.getElementById("editPage").classList.add("hidden");
-
-if(page==="form") document.getElementById("formPage").classList.remove("hidden");
-if(page==="dashboard"){ document.getElementById("dashboardPage").classList.remove("hidden"); loadDashboard(); }
-if(page==="edit"){ document.getElementById("editPage").classList.remove("hidden"); renderEdit(); }
+function showPage(p){
+formPage.classList.add("hidden");
+dashboardPage.classList.add("hidden");
+editPage.classList.add("hidden");
+if(p==="form") formPage.classList.remove("hidden");
+if(p==="dashboard"){ dashboardPage.classList.remove("hidden"); loadDashboard(); }
+if(p==="edit"){ editPage.classList.remove("hidden"); renderEdit(); }
 }
 
 function loadConfig(){
@@ -88,24 +104,27 @@ fetch(API+"?action=config")
 .then(data=>{
 configData=data;
 renderQuestions();
-})
-.catch(()=>Swal.fire("โหลดคำถามไม่ได้"));
+renderEdit();
+emojiInput.value=data.emojis.join(" ");
+});
 }
 
 function renderQuestions(){
-const box=document.getElementById("questions");
-box.innerHTML="";
+questions.innerHTML="";
 answers=[];
 
 configData.questions.forEach((q,i)=>{
 answers[i]=0;
+
 let div=document.createElement("div");
-div.className="mb-4";
-div.innerHTML=`<p class="mb-2">${q}</p>`;
+div.className="bg-white p-4 rounded shadow mb-3";
+
+div.innerHTML=`<p class="font-semibold mb-2">${i+1}. ${q}</p>`;
+
 configData.emojis.forEach((e,index)=>{
 let btn=document.createElement("button");
 btn.innerText=e;
-btn.className="text-2xl p-2";
+btn.className="text-3xl p-2 mx-1";
 btn.onclick=()=>{
 answers[i]=index+1;
 [...div.querySelectorAll("button")].forEach(b=>b.classList.remove("active-emoji"));
@@ -113,79 +132,78 @@ btn.classList.add("active-emoji");
 };
 div.appendChild(btn);
 });
-box.appendChild(div);
+
+questions.appendChild(div);
 });
 }
 
 function submitForm(){
-if(!document.getElementById("name").value ||
-!document.getElementById("number").value ||
-!document.getElementById("gender").value ||
-!document.getElementById("classroom").value ||
-answers.includes(0)){
+
+if(!name.value||!number.value||!gender.value||!classroom.value||answers.includes(0)){
 Swal.fire("กรุณากรอกให้ครบทุกข้อ");
 return;
 }
 
-Swal.fire({title:"กำลังบันทึก...",didOpen:()=>Swal.showLoading()});
-
-let url=API+"?action=save"+
-"&name="+encodeURIComponent(name.value)+
-"&number="+encodeURIComponent(number.value)+
-"&gender="+encodeURIComponent(gender.value)+
-"&classroom="+encodeURIComponent(classroom.value)+
-"&q1="+answers[0]+
-"&q2="+answers[1]+
-"&q3="+answers[2]+
-"&q4="+answers[3]+
-"&q5="+answers[4]+
-"&suggestion="+encodeURIComponent(suggestion.value);
-
-fetch(url)
+fetch(API,{
+method:"POST",
+body:JSON.stringify({
+type:"response",
+payload:{
+name:name.value,
+number:number.value,
+gender:gender.value,
+classroom:classroom.value,
+answers:answers,
+suggestion:suggestion.value
+}
+})
+})
 .then(r=>r.json())
-.then(()=>{
-Swal.fire("บันทึกสำเร็จ");
-document.querySelector("form")?.reset;
-loadConfig();
-});
+.then(()=>Swal.fire("บันทึกสำเร็จ"));
 }
 
 function loadDashboard(){
 fetch(API+"?action=dashboard")
 .then(r=>r.json())
 .then(data=>{
-document.getElementById("total").innerText="จำนวนผู้ตอบทั้งหมด: "+data.total;
+total.innerText="จำนวนผู้ตอบทั้งหมด: "+data.total;
 
-new Chart(genderChart,{type:'pie',data:{labels:Object.keys(data.gender),datasets:[{data:Object.values(data.gender)}]}});
+new Chart(genderChart,{type:"pie",data:{labels:Object.keys(data.gender),datasets:[{data:Object.values(data.gender)}]}});
 
-new Chart(classChart,{type:'bar',data:{labels:Object.keys(data.classroom),datasets:[{data:Object.values(data.classroom)}]}});
+new Chart(classChart,{type:"bar",data:{labels:Object.keys(data.classroom),datasets:[{data:Object.values(data.classroom)}]}});
 
-new Chart(avgChart,{type:'bar',data:{labels:["Q1","Q2","Q3","Q4","Q5"],datasets:[{data:data.avg}]}});
+new Chart(avgChart,{type:"bar",data:{labels:data.avg.map((_,i)=>"ข้อ "+(i+1)),datasets:[{data:data.avg}]}});
 
 });
 }
 
 function renderEdit(){
-let box=document.getElementById("editQuestions");
-box.innerHTML="";
+editQuestions.innerHTML="";
 configData.questions.forEach((q,i)=>{
-box.innerHTML+=`<input value="${q}" onchange="configData.questions[${i}]=this.value" class="w-full p-2 mb-2 border rounded">`;
+editQuestions.innerHTML+=`<input value="${q}" onchange="configData.questions[${i}]=this.value" class="input">`;
 });
 }
 
 function addQuestion(){
-let q=document.getElementById("newQuestion").value;
-if(q){
-configData.questions.push(q);
+if(newQuestion.value){
+configData.questions.push(newQuestion.value);
+newQuestion.value="";
 renderEdit();
 }
 }
 
 function saveConfig(){
-let url=API+"?action=saveConfig"+
-"&questions="+encodeURIComponent(JSON.stringify(configData.questions))+
-"&emojis="+encodeURIComponent(JSON.stringify(configData.emojis));
-fetch(url).then(()=>Swal.fire("บันทึกแล้ว"));
+
+configData.emojis = emojiInput.value.split(" ");
+
+fetch(API,{
+method:"POST",
+body:JSON.stringify({
+type:"config",
+payload:configData
+})
+})
+.then(()=>Swal.fire("บันทึกแล้ว"));
 }
 
 loadConfig();
