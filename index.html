@@ -2,80 +2,118 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>แบบประเมิน</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แบบประเมินความพึงพอใจ</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="script.js"></script>
-<style>
-body{font-family:sans-serif;background:linear-gradient(135deg,#2196f3,#00bcd4);margin:0;padding:20px}
-.card{background:#fff;padding:20px;border-radius:15px;max-width:600px;margin:auto}
-input,select,textarea{width:100%;padding:10px;margin:8px 0}
-button{background:#2196f3;color:#fff;padding:10px;border:none;width:100%;border-radius:10px}
-.rating label{font-size:24px;cursor:pointer}
-</style>
 </head>
-<body>
 
-<div class="card">
-<h2>แบบประเมินความพึงพอใจ</h2>
+<body class="bg-blue-50">
 
-<form id="form">
-<input id="name" placeholder="ชื่อ" required>
-<input id="number" placeholder="เลขที่" required>
-<select id="gender" required>
+<!-- NAV -->
+<div class="bg-blue-600 text-white p-4 flex justify-center gap-6 font-semibold">
+<a href="index.html">แบบประเมิน</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="edit.html">จัดการข้อมูล</a>
+</div>
+
+<div class="max-w-2xl mx-auto bg-white p-6 mt-6 rounded-xl shadow">
+
+<h1 class="text-2xl font-bold text-center mb-6 text-blue-700">
+แบบประเมินความพึงพอใจ
+</h1>
+
+<input id="name" placeholder="ชื่อ" class="w-full border p-2 mb-3 rounded">
+<input id="number" placeholder="เลขที่" class="w-full border p-2 mb-3 rounded">
+
+<select id="gender" class="w-full border p-2 mb-3 rounded">
 <option value="">เลือกเพศ</option>
 <option>ชาย</option>
 <option>หญิง</option>
 </select>
-<input id="room" placeholder="ห้องเรียน" required>
 
-<p>1️⃣ ความพึงพอใจโดยรวม</p>
-<div class="rating">
-<label><input type="radio" name="q1" value="5">😍</label>
-<label><input type="radio" name="q1" value="4">😊</label>
-<label><input type="radio" name="q1" value="3">😐</label>
-<label><input type="radio" name="q1" value="2">😕</label>
-<label><input type="radio" name="q1" value="1">😡</label>
-</div>
+<input id="room" placeholder="ห้องเรียน" class="w-full border p-2 mb-5 rounded">
 
-<p>2️⃣ ความเหมาะสม</p>
-<div class="rating">
-<label><input type="radio" name="q2" value="5">😍</label>
-<label><input type="radio" name="q2" value="4">😊</label>
-<label><input type="radio" name="q2" value="3">😐</label>
-<label><input type="radio" name="q2" value="2">😕</label>
-<label><input type="radio" name="q2" value="1">😡</label>
-</div>
+<div id="questions"></div>
 
-<p>3️⃣ ความเข้าใจ</p>
-<div class="rating">
-<label><input type="radio" name="q3" value="5">😍</label>
-<label><input type="radio" name="q3" value="4">😊</label>
-<label><input type="radio" name="q3" value="3">😐</label>
-<label><input type="radio" name="q3" value="2">😕</label>
-<label><input type="radio" name="q3" value="1">😡</label>
-</div>
+<textarea id="comment" placeholder="ข้อเสนอแนะเพิ่มเติม"
+class="w-full border p-2 mt-4 rounded"></textarea>
 
-<textarea id="comment" placeholder="ข้อเสนอแนะ"></textarea>
-<button>ส่งแบบประเมิน</button>
-</form>
+<button onclick="submitForm()" 
+class="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 mt-4 rounded-lg">
+ส่งแบบประเมิน
+</button>
+
 </div>
 
 <script>
-form.onsubmit=async e=>{
-e.preventDefault();
-await createData({
-name:name.value,
-number:number.value,
-gender:gender.value,
-room:room.value,
-q1:document.querySelector('input[name="q1"]:checked')?.value||0,
-q2:document.querySelector('input[name="q2"]:checked')?.value||0,
-q3:document.querySelector('input[name="q3"]:checked')?.value||0,
-comment:comment.value
+const emojis = ["😡","😟","😐","😊","😍"];
+
+function loadQuestions(){
+getQuestions().then(data=>{
+let box=document.getElementById("questions");
+box.innerHTML="";
+
+data.forEach((row,i)=>{
+let q=row[0];
+
+let div=document.createElement("div");
+div.className="mb-6";
+
+div.innerHTML=`
+<p class="font-semibold mb-2">ข้อที่ ${i+1} : ${q}</p>
+<div class="flex justify-between text-3xl gap-2" id="q${i}"></div>
+`;
+
+box.appendChild(div);
+
+let emojiBox=document.getElementById("q"+i);
+
+emojis.forEach((e,index)=>{
+let btn=document.createElement("button");
+btn.innerHTML=e;
+btn.className="flex-1 p-2 rounded-xl hover:bg-blue-100 transition";
+btn.onclick=()=>{
+[...emojiBox.children].forEach(b=>b.classList.remove("bg-blue-200","scale-110"));
+btn.classList.add("bg-blue-200","scale-110");
+btn.dataset.value=index+1;
+};
+emojiBox.appendChild(btn);
 });
-alert("ส่งสำเร็จ");
-form.reset();
+});
+});
 }
+
+function submitForm(){
+
+let answers=[];
+document.querySelectorAll("[id^=q]").forEach(q=>{
+let selected=[...q.children].find(b=>b.dataset.value);
+answers.push(selected?selected.dataset.value:0);
+});
+
+if(answers.includes(0)){
+alert("กรุณาตอบทุกข้อ");
+return;
+}
+
+let data=[
+name.value,
+number.value,
+gender.value,
+room.value,
+...answers,
+comment.value
+];
+
+saveResponse(data).then(()=>{
+alert("บันทึกสำเร็จ");
+location.reload();
+});
+}
+
+loadQuestions();
 </script>
 
 </body>
