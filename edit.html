@@ -2,126 +2,89 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>แก้ไขข้อมูล</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จัดการข้อมูล</title>
 <script src="script.js"></script>
-<style>
-body{font-family:sans-serif;background:#f4f6f9;padding:20px}
-table{width:100%;border-collapse:collapse;background:#fff}
-th,td{padding:8px;border:1px solid #ddd;text-align:center}
-button{padding:5px 10px;border:none;border-radius:5px;cursor:pointer}
-.edit{background:#4caf50;color:#fff}
-.delete{background:#f44336;color:#fff}
-.modal{
-display:none;
-position:fixed;
-top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.4);
-justify-content:center;
-align-items:center;
-}
-.modal-content{
-background:#fff;
-padding:20px;
-width:400px;
-border-radius:10px;
-}
-input,select,textarea{width:100%;padding:8px;margin:5px 0}
-.save{background:#2196f3;color:#fff;width:100%}
-</style>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
 
-<h2>จัดการข้อมูลแบบประเมิน</h2>
+<body class="bg-blue-50">
 
-<table id="dataTable">
-<thead>
-<tr>
-<th>ชื่อ</th>
-<th>เลขที่</th>
-<th>เพศ</th>
-<th>ห้อง</th>
-<th>แก้ไข</th>
-<th>ลบ</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-<div class="modal" id="modal">
-<div class="modal-content">
-<h3>แก้ไขข้อมูล</h3>
-<input id="e_name">
-<input id="e_number">
-<select id="e_gender">
-<option>ชาย</option>
-<option>หญิง</option>
-</select>
-<input id="e_room">
-<textarea id="e_comment"></textarea>
-<button class="save" onclick="saveEdit()">บันทึก</button>
+<div class="bg-blue-600 text-white p-4 flex justify-center gap-6 font-semibold">
+<a href="index.html">แบบประเมิน</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="edit.html">จัดการข้อมูล</a>
 </div>
+
+<div class="max-w-3xl mx-auto mt-6 bg-white p-6 rounded shadow">
+
+<h1 class="text-xl font-bold mb-4 text-blue-700">
+แก้ไขคำถาม
+</h1>
+
+<div id="questions"></div>
+
+<input id="newQ" placeholder="เพิ่มคำถามใหม่"
+class="border p-2 w-full mt-4 rounded">
+
+<button onclick="addQ()" 
+class="bg-green-500 text-white px-4 py-2 mt-2 rounded">
+เพิ่มคำถาม
+</button>
+
+<button onclick="saveQ()" 
+class="bg-blue-600 text-white px-4 py-2 mt-4 rounded">
+บันทึกทั้งหมด
+</button>
+
 </div>
 
 <script>
-let currentRow=null;
+let questionData=[];
 
-function loadData(){
-getData().then(data=>{
-let html="";
-data.forEach(d=>{
-html+=`
-<tr>
-<td>${d.name}</td>
-<td>${d.number}</td>
-<td>${d.gender}</td>
-<td>${d.room}</td>
-<td><button class="edit" onclick="openEdit(${d.row},'${d.name}','${d.number}','${d.gender}','${d.room}','${d.comment||""}')">แก้ไข</button></td>
-<td><button class="delete" onclick="removeData(${d.row})">ลบ</button></td>
-</tr>`;
-});
-document.querySelector("#dataTable tbody").innerHTML=html;
+function loadQ(){
+getQuestions().then(data=>{
+questionData=data;
+render();
 });
 }
 
-function openEdit(row,name,number,gender,room,comment){
-currentRow=row;
-e_name.value=name;
-e_number.value=number;
-e_gender.value=gender;
-e_room.value=room;
-e_comment.value=comment;
-modal.style.display="flex";
-}
-
-function saveEdit(){
-updateData({
-row:currentRow,
-name:e_name.value,
-number:e_number.value,
-gender:e_gender.value,
-room:e_room.value,
-q1:0,
-q2:0,
-q3:0,
-comment:e_comment.value
-}).then(()=>{
-modal.style.display="none";
-loadData();
+function render(){
+let box=document.getElementById("questions");
+box.innerHTML="";
+questionData.forEach((row,i)=>{
+box.innerHTML+=`
+<div class="flex gap-2 mb-2">
+<input value="${row[0]}" 
+onchange="questionData[${i}][0]=this.value"
+class="border p-2 flex-1 rounded">
+<button onclick="delQ(${i})"
+class="bg-red-500 text-white px-3 rounded">
+ลบ
+</button>
+</div>
+`;
 });
 }
 
-function removeData(row){
-if(confirm("ยืนยันการลบ?")){
-deleteData(row).then(()=>loadData());
-}
-}
-
-window.onclick=function(e){
-if(e.target==modal) modal.style.display="none";
+function addQ(){
+questionData.push([newQ.value]);
+newQ.value="";
+render();
 }
 
-loadData();
+function delQ(i){
+questionData.splice(i,1);
+render();
+}
+
+function saveQ(){
+saveQuestions(questionData).then(()=>{
+alert("บันทึกสำเร็จ");
+});
+}
+
+loadQ();
 </script>
 
 </body>
