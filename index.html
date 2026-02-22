@@ -12,7 +12,12 @@
 
 <style>
 body { font-family: 'Noto Sans Thai', sans-serif; }
-.active-emoji { transform: scale(1.3); border:2px solid #0284c7; background:#e0f2fe; border-radius:10px; }
+.active-emoji {
+  transform: scale(1.3);
+  border:2px solid #0284c7;
+  background:#e0f2fe;
+  border-radius:10px;
+}
 </style>
 </head>
 
@@ -25,7 +30,7 @@ body { font-family: 'Noto Sans Thai', sans-serif; }
 <button onclick="showPage('edit')">แก้ไข</button>
 </div>
 
-<!-- ================= FORM PAGE ================= -->
+<!-- ================= FORM ================= -->
 <div id="formPage" class="p-6 max-w-xl mx-auto">
 <h1 class="text-2xl font-semibold mb-4 text-center">แบบประเมินความพึงพอใจ</h1>
 
@@ -48,25 +53,13 @@ body { font-family: 'Noto Sans Thai', sans-serif; }
 <button onclick="loadConfig()" class="w-full bg-gray-400 text-white p-2 mt-2 rounded">รีเฟรชคำถาม</button>
 </div>
 
-<!-- ================= DASHBOARD ================= -->
-<div id="dashboardPage" class="hidden p-6 max-w-4xl mx-auto">
-<h2 class="text-xl font-semibold mb-4">Dashboard</h2>
-<p id="total" class="mb-4 text-lg font-medium"></p>
-
-<canvas id="genderChart"></canvas>
-<canvas id="classChart" class="mt-6"></canvas>
-<canvas id="avgChart" class="mt-6"></canvas>
-
-<button onclick="loadDashboard()" class="bg-sky-500 text-white p-2 mt-4 rounded">รีเฟรช</button>
-</div>
-
-<!-- ================= EDIT PAGE ================= -->
+<!-- ================= EDIT ================= -->
 <div id="editPage" class="hidden p-6 max-w-xl mx-auto">
 <h2 class="text-xl font-semibold mb-4">แก้ไขคำถาม</h2>
 
 <div id="editQuestions"></div>
 
-<h3 class="mt-4 font-semibold">แก้ไข Emoji (เรียงตามคะแนน 1 → มากสุด)</h3>
+<h3 class="mt-4 font-semibold">แก้ไข Emoji</h3>
 <div id="editEmojis" class="flex gap-2 mt-2"></div>
 
 <input id="newQuestion" class="w-full p-2 mt-4 border rounded" placeholder="เพิ่มคำถามใหม่">
@@ -84,28 +77,35 @@ let answers = [];
 
 function showPage(page){
 formPage.classList.add("hidden");
-dashboardPage.classList.add("hidden");
 editPage.classList.add("hidden");
 
-if(page==="form") formPage.classList.remove("hidden");
-if(page==="dashboard"){ dashboardPage.classList.remove("hidden"); loadDashboard(); }
-if(page==="edit"){ editPage.classList.remove("hidden"); renderEdit(); }
+if(page==="form"){
+formPage.classList.remove("hidden");
+loadConfig();
 }
 
-function loadConfig(){
+if(page==="edit"){
+editPage.classList.remove("hidden");
+loadConfig(()=>renderEdit());
+}
+}
+
+function loadConfig(callback){
 fetch(API+"?action=config")
 .then(r=>r.json())
 .then(data=>{
 configData=data;
 renderQuestions();
-})
-.catch(()=>Swal.fire("โหลดคำถามไม่ได้"));
+if(callback) callback();
+});
 }
 
 function renderQuestions(){
 const box=document.getElementById("questions");
 box.innerHTML="";
 answers=[];
+
+if(!configData.questions) return;
 
 configData.questions.forEach((q,i)=>{
 answers[i]=0;
@@ -115,7 +115,7 @@ div.className="mb-4 bg-white p-4 rounded shadow";
 
 div.innerHTML=`<p class="mb-2 font-medium">ข้อที่ ${i+1} : ${q}</p>`;
 
-configData.emojis.forEach((e,index)=>{
+(configData.emojis || []).forEach((e,index)=>{
 let btn=document.createElement("button");
 btn.innerText=e;
 btn.className="text-2xl p-2 mx-1 rounded";
@@ -131,70 +131,18 @@ box.appendChild(div);
 });
 }
 
-function submitForm(){
-if(!name.value || !number.value || !gender.value || !classroom.value || answers.includes(0)){
-Swal.fire("กรุณากรอกให้ครบทุกข้อ");
-return;
-}
-
-Swal.fire({title:"กำลังบันทึก...",didOpen:()=>Swal.showLoading()});
-
-let url = API + "?action=save" +
-"&name=" + encodeURIComponent(name.value) +
-"&number=" + encodeURIComponent(number.value) +
-"&gender=" + encodeURIComponent(gender.value) +
-"&classroom=" + encodeURIComponent(classroom.value);
-
-answers.forEach((ans,i)=>{
-url += "&q"+(i+1)+"="+ans;
-});
-
-url += "&suggestion=" + encodeURIComponent(suggestion.value);
-
-fetch(url)
-.then(r=>r.json())
-.then(()=>{
-Swal.fire("บันทึกสำเร็จ");
-loadConfig();
-});
-}
-
-function loadDashboard(){
-fetch(API+"?action=dashboard")
-.then(r=>r.json())
-.then(data=>{
-total.innerText="จำนวนผู้ตอบทั้งหมด: "+data.total;
-
-new Chart(genderChart,{type:'pie',
-data:{labels:Object.keys(data.gender),
-datasets:[{data:Object.values(data.gender),
-backgroundColor:["#38bdf8","#f472b6"]}]}
-});
-
-new Chart(classChart,{type:'bar',
-data:{labels:Object.keys(data.classroom),
-datasets:[{data:Object.values(data.classroom),
-backgroundColor:"#60a5fa"}]}
-});
-
-new Chart(avgChart,{type:'bar',
-data:{labels:configData.questions.map((q,i)=>"ข้อ "+(i+1)),
-datasets:[{data:data.avg,
-backgroundColor:["#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa","#fb923c"]}]}
-});
-});
-}
-
 function renderEdit(){
 let box=document.getElementById("editQuestions");
 box.innerHTML="";
 
 configData.questions.forEach((q,i)=>{
 box.innerHTML+=`
+<div class="flex gap-2 mb-2">
 <input value="${q}" 
 onchange="configData.questions[${i}]=this.value"
-class="w-full p-2 mb-2 border rounded">
-`;
+class="w-full p-2 border rounded">
+<button onclick="deleteQuestion(${i})" class="bg-red-500 text-white px-2 rounded">ลบ</button>
+</div>`;
 });
 
 let emoBox=document.getElementById("editEmojis");
@@ -206,6 +154,11 @@ onchange="configData.emojis[${i}]=this.value"
 class="w-16 p-2 border rounded text-center">
 `;
 });
+}
+
+function deleteQuestion(index){
+configData.questions.splice(index,1);
+renderEdit();
 }
 
 function addQuestion(){
@@ -223,7 +176,32 @@ let url=API+"?action=saveConfig"+
 "&emojis="+encodeURIComponent(JSON.stringify(configData.emojis));
 
 fetch(url)
-.then(()=>Swal.fire("บันทึกแล้ว"));
+.then(()=>Swal.fire("บันทึกสำเร็จ").then(()=>{
+loadConfig();
+showPage('form');
+}));
+}
+
+function submitForm(){
+if(!name.value || !number.value || !gender.value || !classroom.value || answers.includes(0)){
+Swal.fire("กรุณากรอกให้ครบทุกข้อ");
+return;
+}
+
+let url = API + "?action=save" +
+"&name=" + encodeURIComponent(name.value) +
+"&number=" + encodeURIComponent(number.value) +
+"&gender=" + encodeURIComponent(gender.value) +
+"&classroom=" + encodeURIComponent(classroom.value);
+
+answers.forEach((ans,i)=>{
+url += "&q"+(i+1)+"="+ans;
+});
+
+url += "&suggestion=" + encodeURIComponent(suggestion.value);
+
+fetch(url)
+.then(()=>Swal.fire("บันทึกสำเร็จ"));
 }
 
 loadConfig();
