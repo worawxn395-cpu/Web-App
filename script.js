@@ -1,144 +1,143 @@
-const API = "https://script.google.com/macros/s/AKfycbzLCn6EkOuC2w5EcGrGn-QDdbChExhWzxB8iUdzIN9kE12GQP0wVceiXpig90oTQcOe7w/exec"
-let configData = {questions:[],emojis:[]};
-let answers=[];
+const API_URL = "https://script.google.com/macros/s/AKfycbyQHiXz48__YUcGRzX4LVwa77R35md17b4AYRAcD-0ia42fd7BA0Tf8OW4UvMJtTFRP7Q/exec";
 
-/* โหลด config ทุกหน้า */
-function loadConfig(callback){
-fetch(API+"?action=config")
-.then(r=>r.json())
-.then(data=>{
-configData=data;
-if(document.getElementById("questions")) renderQuestions();
-if(document.getElementById("editQuestions")) renderEdit();
-if(callback) callback();
-});
+let questions = [];
+let answers = [];
+
+/* โหลดคำถาม */
+async function loadQuestions(){
+  const res = await fetch(API_URL+"?action=getQuestions");
+  questions = await res.json();
 }
 
-/* หน้าแบบประเมิน */
-function renderQuestions(){
-const box=document.getElementById("questions");
-box.innerHTML="";
-answers=[];
+/* แสดงคำถาม */
+async function renderQuestions(){
+  if(!document.getElementById("questions")) return;
+  await loadQuestions();
+  const box = document.getElementById("questions");
+  box.innerHTML="";
+  answers=[];
 
-configData.questions.forEach((q,i)=>{
-answers[i]=0;
-let div=document.createElement("div");
-div.className="mb-4 p-4 bg-sky-50 rounded-xl";
+  questions.forEach((q,i)=>{
+    answers[i]=0;
+    let div=document.createElement("div");
+    div.className="question";
+    div.innerHTML=`<p>${i+1}. ${q[1] || ""} ${q[0]}</p>`;
 
-div.innerHTML=`<p class="font-medium mb-2">ข้อที่ ${i+1} : ${q}</p>`;
+    ["1","2","3","4","5"].forEach(score=>{
+      let btn=document.createElement("button");
+      btn.innerText=score;
+      btn.className="emoji";
+      btn.onclick=()=>{
+        answers[i]=score;
+        div.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+      };
+      div.appendChild(btn);
+    });
 
-configData.emojis.forEach((e,index)=>{
-let btn=document.createElement("button");
-btn.innerText=e;
-btn.className="text-2xl p-2 mx-1";
-btn.onclick=()=>{
-answers[i]=index+1;
-div.querySelectorAll("button").forEach(b=>b.classList.remove("active-emoji"));
-btn.classList.add("active-emoji");
-};
-div.appendChild(btn);
-});
-box.appendChild(div);
-});
+    box.appendChild(div);
+  });
 }
 
 /* ส่งแบบประเมิน */
-function submitForm(){
-if(!name.value || !number.value || !gender.value || !classroom.value || answers.includes(0)){
-Swal.fire("กรุณากรอกให้ครบ");
-return;
-}
+async function submitForm(){
+  if(answers.includes(0)){
+    alert("กรุณาตอบให้ครบ");
+    return;
+  }
 
-let url=API+"?action=save"+
-"&name="+encodeURIComponent(name.value)+
-"&number="+encodeURIComponent(number.value)+
-"&gender="+encodeURIComponent(gender.value)+
-"&classroom="+encodeURIComponent(classroom.value);
+  const data = [
+    document.getElementById("name").value,
+    document.getElementById("number").value,
+    document.getElementById("gender").value,
+    document.getElementById("classroom").value,
+    ...answers,
+    document.getElementById("suggestion").value
+  ];
 
-answers.forEach((ans,i)=>{
-url+="&q"+(i+1)+"="+ans;
-});
+  await fetch(API_URL+"?action=saveResponse",{
+    method:"POST",
+    body:JSON.stringify(data)
+  });
 
-fetch(url)
-.then(()=>Swal.fire("บันทึกสำเร็จ"));
+  alert("บันทึกสำเร็จ");
 }
 
 /* หน้าแก้ไข */
-function renderEdit(){
-const box=document.getElementById("editQuestions");
-box.innerHTML="";
+async function renderEdit(){
+  if(!document.getElementById("editQuestions")) return;
+  await loadQuestions();
+  const box=document.getElementById("editQuestions");
+  box.innerHTML="";
 
-configData.questions.forEach((q,i)=>{
-box.innerHTML+=`
-<div class="flex gap-2 mb-2">
-<span>${i+1}.</span>
-<input value="${q}"
-onchange="configData.questions[${i}]=this.value"
-class="w-full p-2 border rounded">
-</div>`;
-});
-
-const emoBox=document.getElementById("editEmojis");
-emoBox.innerHTML="";
-configData.emojis.forEach((e,i)=>{
-emoBox.innerHTML+=`
-<input value="${e}"
-onchange="configData.emojis[${i}]=this.value"
-class="w-16 p-2 border rounded text-center">
-`;
-});
+  questions.forEach((q,i)=>{
+    box.innerHTML+=`
+    <div>
+      <input value="${q[0]}" onchange="questions[${i}][0]=this.value">
+      <input value="${q[1]||''}" onchange="questions[${i}][1]=this.value">
+      <button onclick="questions.splice(${i},1);renderEdit()">ลบ</button>
+    </div>`;
+  });
 }
 
 function addQuestion(){
-let q=document.getElementById("newQuestion").value;
-if(!q) return;
-configData.questions.push(q);
-renderEdit();
+  const q=document.getElementById("newQuestion").value;
+  const e=document.getElementById("newEmoji").value;
+  questions.push([q,e]);
+  renderEdit();
 }
 
-function saveConfig(){
-fetch(API+"?action=saveConfig"+
-"&questions="+encodeURIComponent(JSON.stringify(configData.questions))+
-"&emojis="+encodeURIComponent(JSON.stringify(configData.emojis))
-)
-.then(()=>Swal.fire("บันทึกสำเร็จ"));
+async function saveQuestions(){
+  await fetch(API_URL+"?action=saveQuestions",{
+    method:"POST",
+    body:JSON.stringify(questions)
+  });
+  alert("บันทึกแล้ว");
 }
 
 /* Dashboard */
-if(document.getElementById("genderChart")){
-fetch(API+"?action=dashboard")
-.then(r=>r.json())
-.then(data=>{
-document.getElementById("total").innerText=
-"จำนวนผู้ตอบทั้งหมด: "+data.total;
+async function renderDashboard(){
+  if(!document.getElementById("genderChart")) return;
 
-new Chart(genderChart,{
-type:'pie',
-data:{
-labels:Object.keys(data.gender),
-datasets:[{data:Object.values(data.gender),
-backgroundColor:["#0284c7","#f472b6"]
-}
-});
+  const res=await fetch(API_URL+"?action=getData");
+  const data=await res.json();
+  data.shift();
 
-new Chart(classChart,{
-type:'bar',
-data:{
-labels:Object.keys(data.classroom),
-datasets:[{data:Object.values(data.classroom),
-backgroundColor:"#0ea5e9"}]
-}
-});
+  let male=0,female=0;
+  let rooms={};
 
-new Chart(avgChart,{
-type:'bar',
-data:{
-labels:data.avg.map((_,i)=>"Q"+(i+1)),
-datasets:[{data:data.avg,
-backgroundColor:"#38bdf8"}]
-}
-});
-});
+  data.forEach(r=>{
+    if(r[3]==="ชาย") male++;
+    if(r[3]==="หญิง") female++;
+    rooms[r[4]]=(rooms[r[4]]||0)+1;
+  });
+
+  new Chart(document.getElementById("genderChart"),{
+    type:"pie",
+    data:{
+      labels:["ชาย","หญิง"],
+      datasets:[{
+        data:[male,female],
+        backgroundColor:["#0d6efd","#ff69b4"]
+      }]
+    }
+  });
+
+  new Chart(document.getElementById("roomChart"),{
+    type:"bar",
+    data:{
+      labels:Object.keys(rooms),
+      datasets:[{
+        label:"จำนวนต่อห้อง",
+        data:Object.values(rooms),
+        backgroundColor:"#0d6efd"
+      }]
+    }
+  });
 }
 
-loadConfig();
+document.addEventListener("DOMContentLoaded",()=>{
+  renderQuestions();
+  renderEdit();
+  renderDashboard();
+});
