@@ -1,17 +1,18 @@
 const API="https://script.google.com/macros/s/AKfycbzRKmnrMS6fLxxgKwNnb861RTjX4qzoF-erOtjtjlOaRx-1EiYAGbfKx9xWRtjWO0LT3Q/exec";
-
-function createData(data){
-return fetch(API,{method:"POST",body:JSON.stringify({...data,action:"create"})});
+function apiGet(action){
+return fetch(API_URL+"?action="+action)
+.then(r=>r.json());
 }
 
-function updateData(data){
-return fetch(API,{method:"POST",body:JSON.stringify({...data,action:"update"})});
+function apiPost(action,data){
+return fetch(API_URL+"?action="+action,{
+method:"POST",
+body:JSON.stringify(data)
+}).then(r=>r.json());
 }
 
-function deleteData(row){
-return fetch(API,{method:"POST",body:JSON.stringify({action:"delete",row})});
-}
+function getQuestions(){ return apiGet("getQuestions"); }
+function saveQuestions(data){ return apiPost("saveQuestions",data); }
 
-function getData(){
-return fetch(API).then(r=>r.json());
-}
+function saveResponse(data){ return apiPost("saveResponse",data); }
+function getData(){ return apiGet("getData"); }
