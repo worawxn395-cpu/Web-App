@@ -1,27 +1,17 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyn3iPnGgsTKkEvMoemrCPtFeMjRsIsyrIEQt1Bejx-gnMFLK8LSBh6hUfO-gpVD7weaA/exec";
+const API="https://script.google.com/macros/s/AKfycbzRKmnrMS6fLxxgKwNnb861RTjX4qzoF-erOtjtjlOaRx-1EiYAGbfKx9xWRtjWO0LT3Q/exec";
 
-const EMOJIS = ["😍","😊","😐","😕","😡"];
-
-async function getQuestions(){
-  const res = await fetch(API_URL+"?action=getQuestions");
-  return await res.json();
+function createData(data){
+return fetch(API,{method:"POST",body:JSON.stringify({...data,action:"create"})});
 }
 
-async function saveResponse(data){
-  await fetch(API_URL+"?action=saveResponse",{
-    method:"POST",
-    body:JSON.stringify(data)
-  });
+function updateData(data){
+return fetch(API,{method:"POST",body:JSON.stringify({...data,action:"update"})});
 }
 
-async function saveQuestions(data){
-  await fetch(API_URL+"?action=saveQuestions",{
-    method:"POST",
-    body:JSON.stringify(data)
-  });
+function deleteData(row){
+return fetch(API,{method:"POST",body:JSON.stringify({action:"delete",row})});
 }
 
-async function getDashboard(){
-  const res = await fetch(API_URL+"?action=getDashboard");
-  return await res.json();
+function getData(){
+return fetch(API).then(r=>r.json());
 }
