@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>แบบประเมินความพึงพอใจ</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="script.js"></script>
-</head>
 
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="script.js"></script>
+
+</head>
 <body class="bg-blue-50">
 
-<!-- NAV -->
+<!-- MENU -->
 <div class="bg-blue-600 text-white p-4 flex justify-center gap-6 font-semibold">
 <a href="index.html">แบบประเมิน</a>
 <a href="dashboard.html">Dashboard</a>
@@ -48,22 +48,30 @@ class="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 mt-4 rounded-lg">
 </div>
 
 <script>
-const emojis = ["😡","😟","😐","😊","😍"];
+
+let questionData=[];
 
 function loadQuestions(){
 getQuestions().then(data=>{
+questionData=data;
+
 let box=document.getElementById("questions");
 box.innerHTML="";
 
 data.forEach((row,i)=>{
-let q=row[0];
+
+let question=row[0];
+let emojiString=row[1] || "😡,😟,😐,😊,😍";
+let emojis=emojiString.split(",");
 
 let div=document.createElement("div");
 div.className="mb-6";
 
 div.innerHTML=`
-<p class="font-semibold mb-2">ข้อที่ ${i+1} : ${q}</p>
-<div class="flex justify-between text-3xl gap-2" id="q${i}"></div>
+<p class="font-semibold mb-2 text-blue-700">
+ข้อที่ ${i+1} : ${question}
+</p>
+<div class="flex justify-between gap-2 text-3xl" id="q${i}"></div>
 `;
 
 box.appendChild(div);
@@ -73,14 +81,18 @@ let emojiBox=document.getElementById("q"+i);
 emojis.forEach((e,index)=>{
 let btn=document.createElement("button");
 btn.innerHTML=e;
-btn.className="flex-1 p-2 rounded-xl hover:bg-blue-100 transition";
+btn.className="flex-1 p-2 rounded-xl transition hover:bg-blue-100";
 btn.onclick=()=>{
-[...emojiBox.children].forEach(b=>b.classList.remove("bg-blue-200","scale-110"));
+[...emojiBox.children].forEach(b=>{
+b.classList.remove("bg-blue-200","scale-110");
+delete b.dataset.value;
+});
 btn.classList.add("bg-blue-200","scale-110");
 btn.dataset.value=index+1;
 };
 emojiBox.appendChild(btn);
 });
+
 });
 });
 }
@@ -88,8 +100,10 @@ emojiBox.appendChild(btn);
 function submitForm(){
 
 let answers=[];
-document.querySelectorAll("[id^=q]").forEach(q=>{
-let selected=[...q.children].find(b=>b.dataset.value);
+
+questionData.forEach((q,i)=>{
+let box=document.getElementById("q"+i);
+let selected=[...box.children].find(b=>b.dataset.value);
 answers.push(selected?selected.dataset.value:0);
 });
 
@@ -114,6 +128,7 @@ location.reload();
 }
 
 loadQuestions();
+
 </script>
 
 </body>
