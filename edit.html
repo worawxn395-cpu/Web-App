@@ -2,81 +2,127 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แก้ไขคำถาม</title>
-<script defer src="script.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>แก้ไขข้อมูล</title>
+<script src="script.js"></script>
 <style>
-body{
-  font-family:'Noto Sans Thai',sans-serif;
-  margin:0;
-  background:linear-gradient(135deg,#4facfe,#00c6ff);
+body{font-family:sans-serif;background:#f4f6f9;padding:20px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:8px;border:1px solid #ddd;text-align:center}
+button{padding:5px 10px;border:none;border-radius:5px;cursor:pointer}
+.edit{background:#4caf50;color:#fff}
+.delete{background:#f44336;color:#fff}
+.modal{
+display:none;
+position:fixed;
+top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.4);
+justify-content:center;
+align-items:center;
 }
-nav{
-  background:#0d6efd;
-  padding:15px;
-  text-align:center;
+.modal-content{
+background:#fff;
+padding:20px;
+width:400px;
+border-radius:10px;
 }
-nav a{
-  color:white;
-  margin:0 15px;
-  text-decoration:none;
-}
-.card{
-  background:white;
-  max-width:700px;
-  margin:40px auto;
-  padding:30px;
-  border-radius:15px;
-}
-input{
-  width:100%;
-  padding:8px;
-  margin:5px 0;
-}
-button{
-  padding:8px 12px;
-  margin:5px 0;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-.save{
-  background:#0d6efd;
-  color:white;
-}
-.add{
-  background:#28a745;
-  color:white;
-}
-.delete{
-  background:red;
-  color:white;
-}
+input,select,textarea{width:100%;padding:8px;margin:5px 0}
+.save{background:#2196f3;color:#fff;width:100%}
 </style>
 </head>
-
 <body>
 
-<nav>
-  <a href="index.html">แบบประเมิน</a>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="edit.html">แก้ไข</a>
-</nav>
+<h2>จัดการข้อมูลแบบประเมิน</h2>
 
-<div class="card">
+<table id="dataTable">
+<thead>
+<tr>
+<th>ชื่อ</th>
+<th>เลขที่</th>
+<th>เพศ</th>
+<th>ห้อง</th>
+<th>แก้ไข</th>
+<th>ลบ</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
-<h2>แก้ไขคำถาม</h2>
-
-<div id="editQuestions"></div>
-
-<input id="newQuestion" placeholder="เพิ่มคำถามใหม่">
-<input id="newEmoji" placeholder="Emoji เช่น 😊">
-
-<button class="add" onclick="addQuestion()">เพิ่มคำถาม</button>
-<button class="save" onclick="saveQuestions()">บันทึกทั้งหมด</button>
-
+<div class="modal" id="modal">
+<div class="modal-content">
+<h3>แก้ไขข้อมูล</h3>
+<input id="e_name">
+<input id="e_number">
+<select id="e_gender">
+<option>ชาย</option>
+<option>หญิง</option>
+</select>
+<input id="e_room">
+<textarea id="e_comment"></textarea>
+<button class="save" onclick="saveEdit()">บันทึก</button>
 </div>
+</div>
+
+<script>
+let currentRow=null;
+
+function loadData(){
+getData().then(data=>{
+let html="";
+data.forEach(d=>{
+html+=`
+<tr>
+<td>${d.name}</td>
+<td>${d.number}</td>
+<td>${d.gender}</td>
+<td>${d.room}</td>
+<td><button class="edit" onclick="openEdit(${d.row},'${d.name}','${d.number}','${d.gender}','${d.room}','${d.comment||""}')">แก้ไข</button></td>
+<td><button class="delete" onclick="removeData(${d.row})">ลบ</button></td>
+</tr>`;
+});
+document.querySelector("#dataTable tbody").innerHTML=html;
+});
+}
+
+function openEdit(row,name,number,gender,room,comment){
+currentRow=row;
+e_name.value=name;
+e_number.value=number;
+e_gender.value=gender;
+e_room.value=room;
+e_comment.value=comment;
+modal.style.display="flex";
+}
+
+function saveEdit(){
+updateData({
+row:currentRow,
+name:e_name.value,
+number:e_number.value,
+gender:e_gender.value,
+room:e_room.value,
+q1:0,
+q2:0,
+q3:0,
+comment:e_comment.value
+}).then(()=>{
+modal.style.display="none";
+loadData();
+});
+}
+
+function removeData(row){
+if(confirm("ยืนยันการลบ?")){
+deleteData(row).then(()=>loadData());
+}
+}
+
+window.onclick=function(e){
+if(e.target==modal) modal.style.display="none";
+}
+
+loadData();
+</script>
 
 </body>
 </html>
