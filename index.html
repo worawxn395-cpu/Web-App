@@ -2,123 +2,81 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แบบประเมินความพึงพอใจ</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script defer src="script.js"></script>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>แบบประเมิน</title>
+<script src="script.js"></script>
 <style>
-body{
-  font-family:'Noto Sans Thai',sans-serif;
-  margin:0;
-  background:linear-gradient(135deg,#4facfe,#00c6ff);
-}
-nav{
-  background:#0d6efd;
-  padding:15px;
-  text-align:center;
-}
-nav a{
-  color:white;
-  margin:0 15px;
-  text-decoration:none;
-  font-weight:600;
-}
-.card{
-  background:white;
-  max-width:700px;
-  margin:40px auto;
-  padding:30px;
-  border-radius:15px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.2);
-}
-.question{
-  margin-bottom:20px;
-}
-button.emoji{
-  font-size:24px;
-  margin:5px;
-  padding:8px 12px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-}
-button.emoji.active{
-  background:#0d6efd;
-  color:white;
-}
-input,select{
-  width:100%;
-  padding:8px;
-  margin:6px 0;
-  border-radius:6px;
-  border:1px solid #ccc;
-}
-.submit-btn{
-  background:#0d6efd;
-  color:white;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  width:100%;
-  font-size:16px;
-}
-  .question-card{
-  background:white;
-  padding:15px;
-  margin:15px 0;
-  border-radius:12px;
-}
-
-.rating-btn{
-  font-size:22px;
-  margin:5px;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  background:#eaf6ff;
-}
-
-.rating-btn.active{
-  background:#0d6efd;
-  color:white;
-}
+body{font-family:sans-serif;background:linear-gradient(135deg,#2196f3,#00bcd4);margin:0;padding:20px}
+.card{background:#fff;padding:20px;border-radius:15px;max-width:600px;margin:auto}
+input,select,textarea{width:100%;padding:10px;margin:8px 0}
+button{background:#2196f3;color:#fff;padding:10px;border:none;width:100%;border-radius:10px}
+.rating label{font-size:24px;cursor:pointer}
 </style>
 </head>
-
 <body>
 
-<nav>
-  <a href="index.html">แบบประเมิน</a>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="edit.html">แก้ไข</a>
-</nav>
-
 <div class="card">
-
 <h2>แบบประเมินความพึงพอใจ</h2>
 
-<input id="name" placeholder="ชื่อ">
-<input id="number" placeholder="เลขที่">
-
-<select id="gender">
+<form id="form">
+<input id="name" placeholder="ชื่อ" required>
+<input id="number" placeholder="เลขที่" required>
+<select id="gender" required>
 <option value="">เลือกเพศ</option>
-<option value="ชาย">ชาย</option>
-<option value="หญิง">หญิง</option>
+<option>ชาย</option>
+<option>หญิง</option>
 </select>
+<input id="room" placeholder="ห้องเรียน" required>
 
-<input id="classroom" placeholder="ห้องเรียน">
-
-<div id="questions"></div>
-
-<textarea id="suggestion" placeholder="ข้อเสนอแนะ"></textarea>
-
-<button class="submit-btn" onclick="submitForm()">ส่งแบบประเมิน</button>
-
+<p>1️⃣ ความพึงพอใจโดยรวม</p>
+<div class="rating">
+<label><input type="radio" name="q1" value="5">😍</label>
+<label><input type="radio" name="q1" value="4">😊</label>
+<label><input type="radio" name="q1" value="3">😐</label>
+<label><input type="radio" name="q1" value="2">😕</label>
+<label><input type="radio" name="q1" value="1">😡</label>
 </div>
+
+<p>2️⃣ ความเหมาะสม</p>
+<div class="rating">
+<label><input type="radio" name="q2" value="5">😍</label>
+<label><input type="radio" name="q2" value="4">😊</label>
+<label><input type="radio" name="q2" value="3">😐</label>
+<label><input type="radio" name="q2" value="2">😕</label>
+<label><input type="radio" name="q2" value="1">😡</label>
+</div>
+
+<p>3️⃣ ความเข้าใจ</p>
+<div class="rating">
+<label><input type="radio" name="q3" value="5">😍</label>
+<label><input type="radio" name="q3" value="4">😊</label>
+<label><input type="radio" name="q3" value="3">😐</label>
+<label><input type="radio" name="q3" value="2">😕</label>
+<label><input type="radio" name="q3" value="1">😡</label>
+</div>
+
+<textarea id="comment" placeholder="ข้อเสนอแนะ"></textarea>
+<button>ส่งแบบประเมิน</button>
+</form>
+</div>
+
+<script>
+form.onsubmit=async e=>{
+e.preventDefault();
+await createData({
+name:name.value,
+number:number.value,
+gender:gender.value,
+room:room.value,
+q1:document.querySelector('input[name="q1"]:checked')?.value||0,
+q2:document.querySelector('input[name="q2"]:checked')?.value||0,
+q3:document.querySelector('input[name="q3"]:checked')?.value||0,
+comment:comment.value
+});
+alert("ส่งสำเร็จ");
+form.reset();
+}
+</script>
 
 </body>
 </html>
