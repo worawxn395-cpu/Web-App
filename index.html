@@ -10,65 +10,182 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<style>
-body { font-family: 'Noto Sans Thai', sans-serif; }
-.active-emoji {
-  transform: scale(1.3);
-  border:2px solid #0284c7;
-  background:#e0f2fe;
-  border-radius:10px;
-}
-</style>
-</head>
-
-<body class="bg-sky-50">
-
-<!-- NAV -->
-<div class="bg-sky-500 text-white p-4 flex justify-center gap-4 text-lg">
-<button onclick="showPage('form')">แบบประเมิน</button>
-<button onclick="showPage('dashboard')">Dashboard</button>
-<button onclick="showPage('edit')">แก้ไข</button>
-</div>
-
-<!-- ================= FORM ================= -->
-<div id="formPage" class="p-6 max-w-xl mx-auto">
-<h1 class="text-2xl font-semibold mb-4 text-center">แบบประเมินความพึงพอใจ</h1>
-
-<input id="name" class="w-full p-2 mb-2 border rounded" placeholder="ชื่อ">
-<input id="number" class="w-full p-2 mb-2 border rounded" placeholder="เลขที่">
-
-<select id="gender" class="w-full p-2 mb-2 border rounded">
-<option value="">เลือกเพศ</option>
-<option>ชาย</option>
-<option>หญิง</option>
-</select>
-
-<input id="classroom" class="w-full p-2 mb-4 border rounded" placeholder="ห้องเรียน">
-
-<div id="questions"></div>
-
-<textarea id="suggestion" class="w-full p-2 mt-4 border rounded" placeholder="ข้อเสนอแนะเพิ่มเติม"></textarea>
-
-<button onclick="submitForm()" class="w-full bg-sky-500 text-white p-2 mt-4 rounded">ส่งแบบประเมิน</button>
-<button onclick="loadConfig()" class="w-full bg-gray-400 text-white p-2 mt-2 rounded">รีเฟรชคำถาม</button>
-</div>
-
-<!-- ================= EDIT ================= -->
-<div id="editPage" class="hidden p-6 max-w-xl mx-auto">
-<h2 class="text-xl font-semibold mb-4">แก้ไขคำถาม</h2>
-
-<div id="editQuestions"></div>
-
-<h3 class="mt-4 font-semibold">แก้ไข Emoji</h3>
-<div id="editEmojis" class="flex gap-2 mt-2"></div>
-
-<input id="newQuestion" class="w-full p-2 mt-4 border rounded" placeholder="เพิ่มคำถามใหม่">
-<button onclick="addQuestion()" class="bg-green-500 text-white p-2 mt-2 rounded">เพิ่มคำถาม</button>
-
-<button onclick="saveConfig()" class="w-full bg-sky-500 text-white p-2 mt-4 rounded">บันทึกทั้งหมด</button>
-</div>
-
 <script>
+
+const API = "https://script.google.com/macros/s/AKfycbzdz9HNCj3pVzT9vHkOGWq5wZtnHEdyk_FiUtWr_JSP0YUcyzpHsLqA95UQY9depV9BbQ/exec";
+
+let configData = { questions: [], emojis: [] };
+let answers = [];
+
+/* ================= PAGE SWITCH ================= */
+
+function showPage(page){
+  document.getElementById("formPage").classList.add("hidden");
+  document.getElementById("editPage").classList.add("hidden");
+
+  if(page==="form"){
+    document.getElementById("formPage").classList.remove("hidden");
+    loadConfig();
+  }
+
+  if(page==="edit"){
+    document.getElementById("editPage").classList.remove("hidden");
+    loadConfig(renderEdit);
+  }
+}
+
+/* ================= LOAD CONFIG ================= */
+
+function loadConfig(callback){
+  fetch(API+"?action=config")
+  .then(r=>r.json())
+  .then(data=>{
+    configData.questions = data.questions || [];
+    configData.emojis = data.emojis || [];
+    renderQuestions();
+    if(callback) callback();
+  });
+}
+
+/* ================= FORM ================= */
+
+function renderQuestions(){
+  const box = document.getElementById("questions");
+  box.innerHTML="";
+  answers=[];
+
+  configData.questions.forEach((q,i)=>{
+    answers[i]=0;
+
+    let div=document.createElement("div");
+    div.className="mb-4 bg-white p-4 rounded shadow";
+
+    div.innerHTML=`<p class="mb-2 font-medium text-sky-700">
+    ข้อที่ ${i+1} : ${q}
+    </p>`;
+
+    configData.emojis.forEach((e,index)=>{
+      let btn=document.createElement("button");
+      btn.innerText=e;
+      btn.className="text-2xl p-2 mx-1 rounded transition";
+
+      btn.onclick=()=>{
+        answers[i]=index+1;
+        div.querySelectorAll("button").forEach(b=>b.classList.remove("active-emoji"));
+        btn.classList.add("active-emoji");
+      };
+
+      div.appendChild(btn);
+    });
+
+    box.appendChild(div);
+  });
+}
+
+/* ================= EDIT ================= */
+
+function renderEdit(){
+  const box=document.getElementById("editQuestions");
+  box.innerHTML="";
+
+  configData.questions.forEach((q,i)=>{
+    box.innerHTML+=`
+    <div class="flex gap-2 mb-2">
+      <span class="w-6">${i+1}.</span>
+      <input value="${q}" 
+      onchange="configData.questions[${i}]=this.value"
+      class="w-full p-2 border rounded">
+      <button onclick="deleteQuestion(${i})"
+      class="bg-red-500 text-white px-2 rounded">ลบ</button>
+    </div>`;
+  });
+
+  renderEmojiEdit();
+}
+
+function renderEmojiEdit(){
+  const emoBox=document.getElementById("editEmojis");
+  emoBox.innerHTML="";
+
+  configData.emojis.forEach((e,i)=>{
+    emoBox.innerHTML+=`
+    <input value="${e}"
+    onchange="configData.emojis[${i}]=this.value"
+    class="w-16 p-2 border rounded text-center">
+    `;
+  });
+
+  emoBox.innerHTML+=`
+  <button onclick="addEmoji()"
+  class="bg-green-500 text-white px-3 rounded">
+  + เพิ่ม
+  </button>`;
+}
+
+function addQuestion(){
+  let q=document.getElementById("newQuestion").value;
+  if(!q) return;
+  configData.questions.push(q);
+  document.getElementById("newQuestion").value="";
+  renderEdit();
+}
+
+function deleteQuestion(index){
+  configData.questions.splice(index,1);
+  renderEdit();
+}
+
+function addEmoji(){
+  configData.emojis.push("😊");
+  renderEmojiEdit();
+}
+
+/* ================= SAVE CONFIG ================= */
+
+function saveConfig(){
+  fetch(API+"?action=saveConfig"+
+    "&questions="+encodeURIComponent(JSON.stringify(configData.questions))+
+    "&emojis="+encodeURIComponent(JSON.stringify(configData.emojis))
+  )
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.status==="saved"){
+      Swal.fire("บันทึกสำเร็จ");
+      showPage("form");
+    }else{
+      Swal.fire("เกิดข้อผิดพลาด");
+    }
+  });
+}
+
+/* ================= SUBMIT FORM ================= */
+
+function submitForm(){
+
+  if(!name.value || !number.value || !gender.value || !classroom.value || answers.includes(0)){
+    Swal.fire("กรุณากรอกให้ครบทุกข้อ");
+    return;
+  }
+
+  let url = API+"?action=save"+
+  "&name="+encodeURIComponent(name.value)+
+  "&number="+encodeURIComponent(number.value)+
+  "&gender="+encodeURIComponent(gender.value)+
+  "&classroom="+encodeURIComponent(classroom.value);
+
+  answers.forEach((ans,i)=>{
+    url+="&q"+(i+1)+"="+ans;
+  });
+
+  url+="&suggestion="+encodeURIComponent(suggestion.value);
+
+  fetch(url)
+  .then(()=>Swal.fire("บันทึกสำเร็จ"));
+}
+
+loadConfig();
+
+</script>
 
 const API = "https://script.google.com/macros/s/AKfycbxcDEs92iYSgMjxK4sSXhESLiPB0JmEPElsvQh8MxGbbfqBEepNWD7vFF-aRxBE4ODmzQ/exec";
 
