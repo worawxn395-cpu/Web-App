@@ -1,57 +1,59 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script defer src="script.js"></script>
-<style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:linear-gradient(135deg,#4facfe,#00c6ff);
-}
-nav{
-  background:#0d6efd;
-  padding:15px;
-  text-align:center;
-}
-nav a{
-  color:white;
-  margin:0 15px;
-  text-decoration:none;
-}
-.card{
-  background:white;
-  max-width:900px;
-  margin:40px auto;
-  padding:30px;
-  border-radius:15px;
-}
-canvas{
-  margin:20px 0;
-}
-</style>
+<script src="script.js"></script>
 </head>
-
 <body>
-
-<nav>
-  <a href="index.html">แบบประเมิน</a>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="edit.html">แก้ไข</a>
-</nav>
-  
-<div class="card">
 <h2>Dashboard</h2>
-<h3>จำนวนผู้ตอบทั้งหมด: <span id="totalCount">0</span> คน</h3>
 
 <canvas id="genderChart"></canvas>
 <canvas id="roomChart"></canvas>
-<canvas id="scoreChart"></canvas>
 
-</div>
+<table border="1" width="100%" id="table"></table>
 
+<script>
+getData().then(data=>{
+let male=0,female=0;
+let rooms={};
+
+let table="<tr><th>ชื่อ</th><th>เลขที่</th><th>ลบ</th></tr>";
+
+data.forEach(d=>{
+if(d.gender=="ชาย") male++;
+if(d.gender=="หญิง") female++;
+rooms[d.room]=(rooms[d.room]||0)+1;
+
+table+=`<tr>
+<td>${d.name}</td>
+<td>${d.number}</td>
+<td><button onclick="remove(${d.row})">ลบ</button></td>
+</tr>`;
+});
+
+document.getElementById("table").innerHTML=table;
+
+new Chart(genderChart,{
+type:"pie",
+data:{labels:["ชาย","หญิง"],
+datasets:[{data:[male,female]}]}
+});
+
+new Chart(roomChart,{
+type:"bar",
+data:{labels:Object.keys(rooms),
+datasets:[{data:Object.values(rooms)}]}
+});
+});
+
+function remove(row){
+if(confirm("ลบข้อมูล?")){
+deleteData(row).then(()=>location.reload());
+}
+}
+</script>
 </body>
 </html>
