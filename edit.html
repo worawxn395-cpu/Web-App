@@ -1,76 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>แก้ไขคำถาม</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
 
-<nav>
-<a href="index.html">แบบประเมิน</a> |
-<a href="dashboard.html">Dashboard</a> |
+<body class="bg-gradient-to-br from-sky-400 via-blue-500 to-sky-700 min-h-screen">
+
+<nav class="bg-white/20 backdrop-blur-md shadow-lg text-white">
+<div class="max-w-6xl mx-auto flex justify-center gap-8 py-4 font-semibold">
+<a href="index.html">แบบประเมิน</a>
+<a href="dashboard.html">Dashboard</a>
 <a href="edit.html">แก้ไข</a>
+</div>
 </nav>
-<hr>
 
-<h2>แก้ไขคำถาม</h2>
+<div class="max-w-xl mx-auto mt-10 p-8 bg-white/95 rounded-3xl shadow-2xl">
 
-<input id="newQ" placeholder="คำถามใหม่">
-<input id="newEmoji" placeholder="Emoji">
-<button onclick="add()">เพิ่ม</button>
+<h2 class="text-2xl font-bold text-sky-700 mb-6">
+แก้ไขคำถาม
+</h2>
 
-<hr>
-<div id="list"></div>
-<br>
-<button onclick="saveAll()">บันทึกทั้งหมด</button>
+<div id="editQuestions" class="space-y-3"></div>
+
+<h3 class="mt-6 font-semibold">แก้ไข Emoji</h3>
+<div id="editEmojis" class="flex gap-3 mt-3"></div>
+
+<input id="newQuestion"
+class="w-full p-3 mt-6 rounded-xl border focus:ring-2 focus:ring-sky-400"
+placeholder="เพิ่มคำถามใหม่">
+
+<button onclick="addQuestion()"
+class="w-full mt-3 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold">
+เพิ่มคำถาม
+</button>
+
+<button onclick="saveConfig()"
+class="w-full mt-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold">
+บันทึกทั้งหมด
+</button>
+
+</div>
 
 <script src="script.js"></script>
-<script>
-let questions=[];
-
-async function load(){
-  questions = await getQuestions();
-  render();
-}
-
-function render(){
-  const div=document.getElementById("list");
-  div.innerHTML="";
-  questions.forEach((q,i)=>{
-    div.innerHTML+=`
-      <div>
-        ${i+1}.
-        <input value="${q[0]}" onchange="questions[${i}][0]=this.value">
-        <input value="${q[1]}" onchange="questions[${i}][1]=this.value">
-        <button onclick="del(${i})">ลบ</button>
-      </div>
-      <br>
-    `;
-  });
-}
-
-function add(){
-  questions.push([
-    document.getElementById("newQ").value,
-    document.getElementById("newEmoji").value
-  ]);
-  document.getElementById("newQ").value="";
-  document.getElementById("newEmoji").value="";
-  render();
-}
-
-function del(i){
-  questions.splice(i,1);
-  render();
-}
-
-async function saveAll(){
-  await saveQuestions(questions);
-  alert("บันทึกแล้ว");
-}
-
-load();
-</script>
-
 </body>
 </html>
