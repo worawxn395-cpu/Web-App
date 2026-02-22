@@ -1,5 +1,4 @@
-const API = "https://script.google.com/macros/s/AKfycbznJWp2xBHmbz5Nuk3GdeeFEvBeSQNQ_QXcTqEqjhIzVX1FJtG2UOc1qtfbUSFgFHY9EA/exec
-
+const API = "https://script.google.com/macros/s/AKfycbzLCn6EkOuC2w5EcGrGn-QDdbChExhWzxB8iUdzIN9kE12GQP0wVceiXpig90oTQcOe7w/exec"
 let configData = {questions:[],emojis:[]};
 let answers=[];
 
