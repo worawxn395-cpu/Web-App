@@ -4,70 +4,79 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>แก้ไขคำถาม</title>
-
-<script>
-const API = "YOUR_WEB_APP_URL";
-
-let questions = [];
-
-function loadQuestions(){
-  fetch(API+"?action=getQuestions")
-  .then(r=>r.json())
-  .then(data=>{
-    questions = data;
-    render();
-  });
+<script defer src="script.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{
+  font-family:'Noto Sans Thai',sans-serif;
+  margin:0;
+  background:linear-gradient(135deg,#4facfe,#00c6ff);
 }
-
-function render(){
-  const list = document.getElementById("list");
-  list.innerHTML = "";
-
-  questions.forEach((q,i)=>{
-    list.innerHTML += `
-    <div class="row">
-      <input value="${q[0]}" onchange="questions[${i}][0]=this.value">
-      <input value="${q[1]}" onchange="questions[${i}][1]=this.value">
-      <button onclick="removeQ(${i})">ลบ</button>
-    </div>`;
-  });
+nav{
+  background:#0d6efd;
+  padding:15px;
+  text-align:center;
 }
-
-function addQ(){
-  questions.push(["","😀"]);
-  render();
+nav a{
+  color:white;
+  margin:0 15px;
+  text-decoration:none;
 }
-
-function removeQ(i){
-  questions.splice(i,1);
-  render();
+.card{
+  background:white;
+  max-width:700px;
+  margin:40px auto;
+  padding:30px;
+  border-radius:15px;
 }
-
-function save(){
-  const data = questions.map(q=>({
-    question:q[0],
-    emoji:q[1]
-  }));
-
-  fetch(API+"?action=saveQuestions",{
-    method:"POST",
-    body:JSON.stringify(data)
-  }).then(()=>alert("บันทึกแล้ว"));
+input{
+  width:100%;
+  padding:8px;
+  margin:5px 0;
 }
-
-function refreshForm(){
-  loadQuestions();
+button{
+  padding:8px 12px;
+  margin:5px 0;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
 }
+.save{
+  background:#0d6efd;
+  color:white;
+}
+.add{
+  background:#28a745;
+  color:white;
+}
+.delete{
+  background:red;
+  color:white;
+}
+</style>
+</head>
 
-window.onload=loadQuestions;
-</script>
+<body>
 
-<button onclick="addQ()">เพิ่มคำถาม</button>
-<button onclick="save()">บันทึกทั้งหมด</button>
-<button onclick="refreshForm()">รีเฟรช</button>
+<nav>
+  <a href="index.html">แบบประเมิน</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="edit.html">แก้ไข</a>
+</nav>
 
-<div id="list"></div>
+<div class="card">
 
-<script src="script.js"></script>
+<h2>แก้ไขคำถาม</h2>
+
+<div id="editQuestions"></div>
+
+<input id="newQuestion" placeholder="เพิ่มคำถามใหม่">
+<input id="newEmoji" placeholder="Emoji เช่น 😊">
+
+<button class="add" onclick="addQuestion()">เพิ่มคำถาม</button>
+<button class="save" onclick="saveQuestions()">บันทึกทั้งหมด</button>
+
+</div>
+
 </body>
 </html>
