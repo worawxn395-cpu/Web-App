@@ -1,59 +1,112 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="script.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-<h2>Dashboard</h2>
 
+<body class="bg-blue-50">
+
+<div class="bg-blue-600 text-white p-4 flex justify-center gap-6 font-semibold">
+<a href="index.html">แบบประเมิน</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="edit.html">จัดการข้อมูล</a>
+</div>
+
+<div class="max-w-4xl mx-auto mt-6">
+
+<h1 class="text-2xl font-bold text-center text-blue-700 mb-6">
+Dashboard สรุปผล
+</h1>
+
+<div class="bg-white p-4 rounded shadow mb-6">
+<h2 class="font-semibold mb-2">จำนวนทั้งหมด</h2>
+<p id="total" class="text-3xl text-blue-600 font-bold"></p>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+
+<div class="bg-white p-4 rounded shadow">
+<h2 class="font-semibold mb-4">กราฟวงกลมเพศ</h2>
 <canvas id="genderChart"></canvas>
-<canvas id="roomChart"></canvas>
+</div>
 
-<table border="1" width="100%" id="table"></table>
+<div class="bg-white p-4 rounded shadow">
+<h2 class="font-semibold mb-4">กราฟแท่งรายห้อง</h2>
+<canvas id="roomChart"></canvas>
+</div>
+
+</div>
+
+<div class="bg-white p-4 rounded shadow mt-6">
+<h2 class="font-semibold mb-4">คะแนนเฉลี่ยความพึงพอใจ</h2>
+<canvas id="avgChart"></canvas>
+</div>
+
+</div>
 
 <script>
 getData().then(data=>{
+
+data.shift();
+
+document.getElementById("total").innerText=data.length;
+
 let male=0,female=0;
 let rooms={};
+let sum=0,count=0;
 
-let table="<tr><th>ชื่อ</th><th>เลขที่</th><th>ลบ</th></tr>";
+data.forEach(row=>{
+if(row[2]=="ชาย") male++;
+if(row[2]=="หญิง") female++;
 
-data.forEach(d=>{
-if(d.gender=="ชาย") male++;
-if(d.gender=="หญิง") female++;
-rooms[d.room]=(rooms[d.room]||0)+1;
+rooms[row[3]]=(rooms[row[3]]||0)+1;
 
-table+=`<tr>
-<td>${d.name}</td>
-<td>${d.number}</td>
-<td><button onclick="remove(${d.row})">ลบ</button></td>
-</tr>`;
+for(let i=4;i<row.length-1;i++){
+sum+=Number(row[i]);
+count++;
+}
 });
-
-document.getElementById("table").innerHTML=table;
 
 new Chart(genderChart,{
 type:"pie",
-data:{labels:["ชาย","หญิง"],
-datasets:[{data:[male,female]}]}
+data:{
+labels:["ชาย","หญิง"],
+datasets:[{
+data:[male,female],
+backgroundColor:["#3b82f6","#ec4899"]
+}]
+}
 });
 
 new Chart(roomChart,{
 type:"bar",
-data:{labels:Object.keys(rooms),
-datasets:[{data:Object.values(rooms)}]}
-});
+data:{
+labels:Object.keys(rooms),
+datasets:[{
+data:Object.values(rooms),
+backgroundColor:"#3b82f6"
+}]
+}
 });
 
-function remove(row){
-if(confirm("ลบข้อมูล?")){
-deleteData(row).then(()=>location.reload());
+new Chart(avgChart,{
+type:"bar",
+data:{
+labels:["ค่าเฉลี่ย"],
+datasets:[{
+data:[(sum/count).toFixed(2)],
+backgroundColor:"#10b981"
+}]
 }
-}
+});
+
+});
 </script>
+
 </body>
 </html>
