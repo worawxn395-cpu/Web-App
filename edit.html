@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>แก้ไขคำถาม</title>
+</head>
+<body>
+
+<nav>
+<a href="index.html">แบบประเมิน</a> |
+<a href="dashboard.html">Dashboard</a> |
+<a href="edit.html">แก้ไข</a>
+</nav>
+<hr>
+
+<h2>แก้ไขคำถาม</h2>
+
+<input id="newQ" placeholder="คำถามใหม่">
+<input id="newEmoji" placeholder="Emoji">
+<button onclick="add()">เพิ่ม</button>
+
+<hr>
+<div id="list"></div>
+<br>
+<button onclick="saveAll()">บันทึกทั้งหมด</button>
+
+<script src="script.js"></script>
+<script>
+let questions=[];
+
+async function load(){
+  questions = await getQuestions();
+  render();
+}
+
+function render(){
+  const div=document.getElementById("list");
+  div.innerHTML="";
+  questions.forEach((q,i)=>{
+    div.innerHTML+=`
+      <div>
+        ${i+1}.
+        <input value="${q[0]}" onchange="questions[${i}][0]=this.value">
+        <input value="${q[1]}" onchange="questions[${i}][1]=this.value">
+        <button onclick="del(${i})">ลบ</button>
+      </div>
+      <br>
+    `;
+  });
+}
+
+function add(){
+  questions.push([
+    document.getElementById("newQ").value,
+    document.getElementById("newEmoji").value
+  ]);
+  document.getElementById("newQ").value="";
+  document.getElementById("newEmoji").value="";
+  render();
+}
+
+function del(i){
+  questions.splice(i,1);
+  render();
+}
+
+async function saveAll(){
+  await saveQuestions(questions);
+  alert("บันทึกแล้ว");
+}
+
+load();
+</script>
+
+</body>
+</html>
